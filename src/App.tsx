@@ -274,15 +274,19 @@ function App() {
                                             }
                                         )
                                     }
-                                    onResizeStop={(_, __, ___, d) =>
+                                    onResizeStop={(_, __, ___, d, p) => {
                                         updateLinkArea(
                                             index,
                                             {
                                                 ...linkArea,
                                                 width: linkArea.width + d.width,
-                                                height: linkArea.height + d.height
+                                                height: linkArea.height + d.height,
+                                                x: p.x,
+                                                y: p.y,
                                             }
                                         )
+                                    }
+
                                     }
                                 >
                                     <span className='italic text-sm ml-2 opacity-50'>
