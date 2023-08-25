@@ -1,6 +1,9 @@
 import {ChangeEvent, MouseEvent, useEffect, useRef, useState} from 'react';
 import {Rnd} from 'react-rnd';
 
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 /**
  * Defines a rectangular area within an image that hyperlinks to (ideally) an osu! profile page.
  * @param x the pixel x-coordinate of the top-left of the area.
@@ -32,8 +35,11 @@ function App() {
     const [creatingNewLinkArea, setCreatingNewLinkArea] = useState<boolean>(false)
     // The currently defined link areas.
     const [linkAreas, setLinkAreas] = useState<LinkArea[]>([])
+    // The last modified link area index.
+    const [lastModifiedLinkAreaIndex, setLastModifiedLinkAreaIndex] = useState<number>(-1)
 
     const INPUT_IMAGE_URL_ID = 'image-url-input'
+    const MIN_LINK_AREA_SIZE = 25
 
     /**
      * Add event listeners for mouse controls.
@@ -48,7 +54,7 @@ function App() {
             if (creatingNewLinkArea) {
                 const coords = getImagePointerCoordinates(event)
                 coords[0] = Math.max(0, Math.min(coords[0], imageRef!.current?.width!))
-                coords[1] = Math.max(0, Math.min(coords[1], imageRef.current?.height!))
+                coords[1] = Math.max(0, Math.min(coords[1], imageRef!.current?.height!))
                 setCurrentCoordinate(coords)
             }
         }
@@ -60,11 +66,12 @@ function App() {
         const handleMouseUp = () => {
             if (creatingNewLinkArea) {
                 setCreatingNewLinkArea(false)
+
                 createNewLinkArea(
-                    Math.min(startingCoordinate[0], currentCoordinate[0]),
-                    Math.min(startingCoordinate[1], currentCoordinate[1]),
-                    Math.abs(currentCoordinate[0] - startingCoordinate[0]),
-                    Math.abs(currentCoordinate[1] - startingCoordinate[1]),
+                    Math.min(startingCoordinate[0], currentCoordinate[0], imageRef!.current?.width! - MIN_LINK_AREA_SIZE),
+                    Math.min(startingCoordinate[1], currentCoordinate[1], imageRef!.current?.height! - MIN_LINK_AREA_SIZE),
+                    Math.max(MIN_LINK_AREA_SIZE, Math.abs(currentCoordinate[0] - startingCoordinate[0])),
+                    Math.max(MIN_LINK_AREA_SIZE, Math.abs(currentCoordinate[1] - startingCoordinate[1]))
                 )
             }
         }
@@ -149,7 +156,6 @@ function App() {
      * Get x-y coordinates for any given click on the loaded image.
      */
     function getImagePointerCoordinates(event: MouseEvent<HTMLImageElement, MouseEvent>) {
-        console.log([event.clientX - imageRef.current!.x, event.clientY - imageRef.current!.y])
         return [event.clientX - imageRef.current!.x, event.clientY - imageRef.current!.y]
     }
 
@@ -167,7 +173,7 @@ function App() {
      */
     function copyCodeToClipboard() {
         navigator.clipboard.writeText(generateCode()).then(() => {
-            alert('Copied to clipboard')
+            toast("Successfully saved to clipboard!")
         })
     }
 
@@ -190,6 +196,7 @@ function App() {
                 name: ''
             } as LinkArea
         ])
+        setLastModifiedLinkAreaIndex(linkAreas.length)
     }
 
     return (
@@ -211,22 +218,23 @@ function App() {
 
                 </a>
                 <label htmlFor={INPUT_IMAGE_URL_ID}>
-                    1. Paste Image URL below and click 'Upload'
+                    1. Paste Image URL below and click 'Load Image'
                 </label>
                 <form
-                    className='flex'
+                    className='flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0'
                     onSubmit={fetchImageUrlAndClearLinkAreas}
                 >
                     <input
                         placeholder='https://...'
-                        className='bg-stone-800 rounded-lg p-2 flex-1'
+                        autoComplete='off'
+                        className='bg-stone-800 rounded-lg p-2 sm:flex-1'
                         id={INPUT_IMAGE_URL_ID}
                         name={INPUT_IMAGE_URL_ID}
                     />
                     <button
-                        className='justify-self-center ml-3 bg-blue-600 py-2 px-12 rounded-lg max-w-sm'
+                        className='justify-self-center bg-blue-600 hover:bg-blue-400 w-full sm:w-48 py-2 rounded-lg'
                     >
-                        Upload
+                        Load Image
                     </button>
                 </form>
                 {imageUrl &&
@@ -257,7 +265,7 @@ function App() {
                                 {linkAreas.map((linkArea: LinkArea, index: number) => {
                                     return <Rnd
                                         key={index}
-                                        className='bg-black bg-opacity-50 outline-white outline-1 relative'
+                                        className={'bg-black bg-opacity-50 relative' + (lastModifiedLinkAreaIndex == index ? ' z-10 bg-opacity-75 border-black border border-opacity-25' : '')}
                                         position={{
                                             x: linkArea.x,
                                             y: linkArea.y
@@ -266,7 +274,11 @@ function App() {
                                             width: linkArea.width,
                                             height: linkArea.height
                                         }}
+                                        resizeHandleClasses={{
+                                            bottomRight: lastModifiedLinkAreaIndex == index ? 'rounded-full z-10 border-black border-opacity-75 border opacity-100 w-full h-full bg-white' : undefined
+                                        }}
                                         bounds='parent'
+                                        onDragStart={() => setLastModifiedLinkAreaIndex(index)}
                                         onDragStop={(_, d) =>
                                             updateLinkArea(
                                                 index,
@@ -277,6 +289,7 @@ function App() {
                                                 }
                                             )
                                         }
+                                        onResizeStart={() => setLastModifiedLinkAreaIndex(index)}
                                         onResizeStop={(_, __, ___, d, p) => {
                                             updateLinkArea(
                                                 index,
@@ -292,7 +305,7 @@ function App() {
 
                                         }
                                     >
-                                    <span className='italic text-sm ml-2 opacity-50'>
+                                    <span className='italic text-sm opacity-50 ml-2'>
                                         {linkArea.name != '' ? linkArea.name : (index + 1)}
                                     </span>
                                     </Rnd>
@@ -301,43 +314,54 @@ function App() {
                             </div>
                         </div>
                         <span>
-                            3. Fill in the osu!user URLs and names below.
+                            3. Fill in the URLs and display names below.
                         </span>
-                        {linkAreas.map((linkArea: LinkArea, index: number) => {
-                            return <div key={index} className='flex flex-row space-x-2 items-center'>
-                                <span>{index + 1}</span>
-                                <input
-                                    placeholder='osu!user URL'
-                                    className='bg-stone-800 rounded-lg p-2 flex-1'
-                                    value={linkArea.link}
-                                    onChange={(event) =>
-                                        updateLinkArea(index, {
-                                            ...linkArea,
-                                            link: event.target.value
-                                        })
-                                    }
-                                />
-                                <input
-                                    placeholder='osu!user name'
-                                    className='bg-stone-800 rounded-lg p-2 flex-1'
-                                    value={linkArea.name}
-                                    onChange={(event) =>
-                                        updateLinkArea(index, {
-                                            ...linkArea,
-                                            name: event.target.value
-                                        })
-                                    }
-                                />
-                                <button
-                                    className='bg-red-600 opacity-75 hover:opacity-100 rounded aspect-square w-9'
-                                    onClick={() => {
-                                        removeLinkAreaByIndex(index)
-                                    }}
-                                >
-                                    ✗
-                                </button>
+                        {
+                            linkAreas.length > 0 &&
+                            <div className='space-y-3 max-h-56 overflow-auto border-stone-600 border rounded-xl p-2'>
+                                {linkAreas.map((linkArea: LinkArea, index: number) => {
+                                    return <div key={index}
+                                                className='flex flex-col sm:flex-row space-x-2 space-y-2 sm:space-y-0 items-center'>
+                                        <button
+                                            className='bg-blue-600 hover:bg-blue-400 rounded-lg p-2 w-10 text-center'
+                                            onClick={() => setLastModifiedLinkAreaIndex((prevState) => prevState == index ? -1 : index)}
+                                        >
+                                            {index + 1}
+                                        </button>
+                                        <input
+                                            placeholder='URL'
+                                            className='bg-stone-800 rounded-lg p-2 flex-1 w-full m-0'
+                                            value={linkArea.link}
+                                            onChange={(event) =>
+                                                updateLinkArea(index, {
+                                                    ...linkArea,
+                                                    link: event.target.value
+                                                })
+                                            }
+                                        />
+                                        <input
+                                            placeholder='Display Name (e.g. osu! name)'
+                                            className='bg-stone-800 rounded-lg p-2 flex-1 w-full'
+                                            value={linkArea.name}
+                                            onChange={(event) =>
+                                                updateLinkArea(index, {
+                                                    ...linkArea,
+                                                    name: event.target.value
+                                                })
+                                            }
+                                        />
+                                        <button
+                                            className='bg-red-500 hover:bg-red-400 rounded-lg p-2 w-full sm:w-auto'
+                                            onClick={() => {
+                                                removeLinkAreaByIndex(index)
+                                            }}
+                                        >
+                                            Delete
+                                        </button>
+                                    </div>
+                                })
+                                }
                             </div>
-                        })
                         }
                         <span>
                             4. When complete, copy the generated code below to your osu! page
@@ -345,11 +369,12 @@ function App() {
                         <textarea rows={3} className='whitespace-pre bg-stone-800 p-2 rounded-lg font-mono'
                                   value={generateCode()} readOnly/>
                         <button
-                            className='bg-blue-600 py-2 px-12 rounded-lg'
+                            className='py-2 px-12 rounded-lg bg-blue-600 hover:bg-blue-400'
                             onClick={copyCodeToClipboard}
                         >
                             Copy Generated BBCode to Clipboard
                         </button>
+                        <ToastContainer bodyClassName='text-white' toastClassName='bg-green-500' progressClassName='bg-green-200 bg-none' />
                     </>
                 }
             </div>
