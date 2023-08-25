@@ -1,15 +1,15 @@
 import {ChangeEvent, MouseEvent, useEffect, useRef, useState} from 'react';
 import {Rnd} from 'react-rnd';
 
-import { ToastContainer, toast } from 'react-toastify';
+import {toast, ToastContainer} from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 /**
  * Defines a rectangular area within an image that hyperlinks to (ideally) an osu! profile page.
- * @param x the pixel x-coordinate of the top-left of the area.
- * @param y the pixel y-coordinate of the top-left of the area.
- * @param width the pixel width of the area.
- * @param height the pixel height of the area.
+ * @param x the percentage x-coordinate of the top-left of the area.
+ * @param y the percentage y-coordinate of the top-left of the area.
+ * @param width the percentage width of the area.
+ * @param height the percentage height of the area.
  * @param link the link to go to upon clicking.
  * @param name the tooltip text to display on hover.
  */
@@ -68,10 +68,23 @@ function App() {
                 setCreatingNewLinkArea(false)
 
                 createNewLinkArea(
-                    Math.min(startingCoordinate[0], currentCoordinate[0], imageRef!.current?.width! - MIN_LINK_AREA_SIZE),
-                    Math.min(startingCoordinate[1], currentCoordinate[1], imageRef!.current?.height! - MIN_LINK_AREA_SIZE),
-                    Math.max(MIN_LINK_AREA_SIZE, Math.abs(currentCoordinate[0] - startingCoordinate[0])),
-                    Math.max(MIN_LINK_AREA_SIZE, Math.abs(currentCoordinate[1] - startingCoordinate[1]))
+                    convertSizeToPercentage(
+                        Math.min(startingCoordinate[0], currentCoordinate[0], imageRef!.current?.width! - MIN_LINK_AREA_SIZE),
+                        imageRef!.current?.width!
+                    ),
+
+                    convertSizeToPercentage(
+                        Math.min(startingCoordinate[1], currentCoordinate[1], imageRef!.current?.height! - MIN_LINK_AREA_SIZE),
+                        imageRef!.current?.height!
+                    ),
+                    convertSizeToPercentage(
+                        Math.max(MIN_LINK_AREA_SIZE, Math.abs(currentCoordinate[0] - startingCoordinate[0])),
+                        imageRef!.current?.width!
+                    ),
+                    convertSizeToPercentage(
+                        Math.max(MIN_LINK_AREA_SIZE, Math.abs(currentCoordinate[1] - startingCoordinate[1])),
+                        imageRef!.current?.height!
+                    )
                 )
             }
         }
@@ -84,6 +97,21 @@ function App() {
             document.removeEventListener('mousemove', handleMouseMove)
         }
     }, [creatingNewLinkArea, startingCoordinate, currentCoordinate])
+
+    /**
+     * Event listener to force re-render on resize.
+     */
+    useEffect(() => {
+        const handleResize = () => {
+            setLinkAreas((prevState) => [...prevState])
+        }
+
+        window.addEventListener('resize', handleResize)
+
+        return () => {
+            window.removeEventListener('resize', handleResize)
+        }
+    }, [])
 
     /**
      * Fetch the image from the provided URL.
@@ -135,14 +163,12 @@ function App() {
         // Add image source
         lines.push(imageUrl)
         // Add link areas
-        const imageWidth = imageRef.current?.width!
-        const imageHeight = imageRef.current?.height!
         linkAreas.forEach((linkArea) => {
             const line = []
-            line.push(formatNumberToPrecisionString((linkArea.x / imageWidth * 100)))
-            line.push(formatNumberToPrecisionString((linkArea.y / imageHeight * 100)))
-            line.push(formatNumberToPrecisionString(linkArea.width / imageWidth * 100))
-            line.push(formatNumberToPrecisionString(linkArea.height / imageHeight * 100))
+            line.push(formatNumberToPrecisionString(linkArea.x))
+            line.push(formatNumberToPrecisionString(linkArea.y))
+            line.push(formatNumberToPrecisionString(linkArea.width))
+            line.push(formatNumberToPrecisionString(linkArea.height))
             line.push(linkArea.link != '' ? linkArea.link : 'https://example.com')
             line.push(linkArea.name != '' ? linkArea.name : 'Sample text')
             lines.push(line.join(' '))
@@ -150,6 +176,20 @@ function App() {
 
         lines.push('[/imagemap]')
         return lines.join('\n')
+    }
+
+    /**
+     * Convert a percentage to a pixel size.
+     */
+    function convertPercentageToSize(percentage: number, totalSize: number): number {
+        return totalSize / 100 * percentage
+    }
+
+    /**
+     * Convert a pixel size top a percentage
+     */
+    function convertSizeToPercentage(size: number, totalSize: number): number {
+        return size / totalSize * 100
     }
 
     /**
@@ -201,10 +241,16 @@ function App() {
 
     return (
         <div className='min-h-screen bg-stone-800 text-gray-100 flex flex-col'>
-            <div>
-                <h2 className='text-lg p-4 w-screen bg-stone-900'>
+            <div className='flex flex-row bg-stone-900 w-screen p-4 justify-between'>
+                <h2 className='text-lg'>
                     osu! imagemap mapper
                 </h2>
+                <a href='https://github.com/stkjoe/osu-imagemap-maker' title='Github'>
+                    <svg aria-hidden="true" height="24" viewBox="0 0 16 16" version="1.1" width="24" className="fill-white">
+                        <path
+                            d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"></path>
+                    </svg>
+                </a>
             </div>
             <div
                 className='mx-auto max-w-5xl w-screen flex-grow lg:flex-grow-0 lg:mt-4 py-8 px-6 bg-stone-700 lg:rounded-lg space-y-3 flex flex-col'>
@@ -267,12 +313,12 @@ function App() {
                                         key={index}
                                         className={'bg-black bg-opacity-50 relative' + (lastModifiedLinkAreaIndex == index ? ' z-10 bg-opacity-75 border-black border border-opacity-25' : '')}
                                         position={{
-                                            x: linkArea.x,
-                                            y: linkArea.y
+                                            x: convertPercentageToSize(linkArea.x, imageRef!.current?.width!),
+                                            y: convertPercentageToSize(linkArea.y, imageRef!.current?.height!)
                                         }}
                                         size={{
-                                            width: linkArea.width,
-                                            height: linkArea.height
+                                            width: convertPercentageToSize(linkArea.width, imageRef!.current?.width!),
+                                            height: convertPercentageToSize(linkArea.height, imageRef!.current?.height!)
                                         }}
                                         resizeHandleClasses={{
                                             bottomRight: lastModifiedLinkAreaIndex == index ? 'rounded-full z-10 border-black border-opacity-75 border opacity-100 w-full h-full bg-white' : undefined
@@ -284,25 +330,23 @@ function App() {
                                                 index,
                                                 {
                                                     ...linkArea,
-                                                    x: Math.min(Math.max(d.x, 0), imageRef.current!.width - linkArea.width),
-                                                    y: Math.min(Math.max(d.y, 0), imageRef.current!.height - linkArea.height),
+                                                    x: convertSizeToPercentage(Math.min(Math.max(d.x, 0), imageRef.current!.width - linkArea.width), imageRef.current!.width),
+                                                    y: convertSizeToPercentage(Math.min(Math.max(d.y, 0), imageRef.current!.height - linkArea.height), imageRef.current!.height)
                                                 }
                                             )
                                         }
                                         onResizeStart={() => setLastModifiedLinkAreaIndex(index)}
-                                        onResizeStop={(_, __, ___, d, p) => {
+                                        onResizeStop={(_, __, ___, d, p) =>
                                             updateLinkArea(
                                                 index,
                                                 {
                                                     ...linkArea,
-                                                    width: linkArea.width + d.width,
-                                                    height: linkArea.height + d.height,
-                                                    x: p.x,
-                                                    y: p.y,
+                                                    width: linkArea.width + convertSizeToPercentage(d.width, imageRef!.current?.width!),
+                                                    height: linkArea.height + convertSizeToPercentage(d.height, imageRef!.current?.height!),
+                                                    x: convertSizeToPercentage(p.x, imageRef!.current?.width!),
+                                                    y: convertSizeToPercentage(p.y, imageRef!.current?.height!),
                                                 }
                                             )
-                                        }
-
                                         }
                                     >
                                     <span className='italic text-sm opacity-50 ml-2'>
@@ -321,7 +365,7 @@ function App() {
                             <div className='space-y-3 max-h-56 overflow-auto border-stone-600 border rounded-xl p-2'>
                                 {linkAreas.map((linkArea: LinkArea, index: number) => {
                                     return <div key={index}
-                                                className='flex flex-col sm:flex-row space-x-2 space-y-2 sm:space-y-0 items-center'>
+                                                className='flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0 items-center'>
                                         <button
                                             className='bg-blue-600 hover:bg-blue-400 rounded-lg p-2 w-10 text-center'
                                             onClick={() => setLastModifiedLinkAreaIndex((prevState) => prevState == index ? -1 : index)}
@@ -374,9 +418,16 @@ function App() {
                         >
                             Copy Generated BBCode to Clipboard
                         </button>
-                        <ToastContainer bodyClassName='text-white' toastClassName='bg-green-500' progressClassName='bg-green-200 bg-none' />
+                        <ToastContainer bodyClassName='text-white' toastClassName='bg-green-500'
+                                        progressClassName='bg-green-200 bg-none'/>
                     </>
                 }
+            </div>
+            <div
+                className='flex flex-row text-sm p-4 w-screen bg-stone-900 bottom-0 absolute items-center justify-center space-x-2'>
+                <h2>
+                    This page is not affiliated with osu!
+                </h2>
             </div>
         </div>
     )

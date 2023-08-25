@@ -1,27 +1,34 @@
-# React + TypeScript + Vite
+# osu-imagemap-maker
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is a tool used to easily generate BBCode image maps for osu! pages.
 
-Currently, two official plugins are available:
+## Getting Started for Development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+The webapp is written in Typescript, Vite, and React. Ensure you have NodeJS installed.
 
-## Expanding the ESLint configuration
+### Installation
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
-
-- Configure the top-level `parserOptions` property like this:
-
-```js
-   parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json'],
-    tsconfigRootDir: __dirname,
-   },
+1. Clone the repo
+```
+git clone https://github.com/stkjoe/osu-imagemap-maker.git
 ```
 
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
+2. Install NPM packages
+```
+npm install 
+```
+
+3. Start the development environment
+```
+npm run dev
+```
+
+## Known bugs
+- Resizing a link area from the top side will cause the link area to shrink slightly more.
+- Resizing a link area from the left side will cause the link area to shrink slightly more.
+
+## Future improvements
+- Add snapping feature for link area resizes
+- Add alignment feature for link area drags
+- Load existing imagemap from osu!BBCode
+- Ability to sort link area layers (low priority)
