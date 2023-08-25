@@ -149,6 +149,7 @@ function App() {
      * Get x-y coordinates for any given click on the loaded image.
      */
     function getImagePointerCoordinates(event: MouseEvent<HTMLImageElement, MouseEvent>) {
+        console.log([event.clientX - imageRef.current!.x, event.clientY - imageRef.current!.y])
         return [event.clientX - imageRef.current!.x, event.clientY - imageRef.current!.y]
     }
 
@@ -232,69 +233,71 @@ function App() {
                         <span>
                             2. Create link areas by click and dragging on the uploaded image.
                         </span>
-                        <div className='w-auto flex justify-center relative'>
-                            <img
-                                alt={''}
-                                onMouseDown={onMouseDown}
-                                ref={imageRef}
-                                src={imageUrl}
-                                className='object-scale-down select-none'
-                                draggable={false}
-                            />
-                            {
-                                // Highlight area
-                                creatingNewLinkArea &&
-                                <div className='bg-black opacity-50 absolute' style={{
-                                    left: Math.min(startingCoordinate[0], currentCoordinate[0]),
-                                    top: Math.min(startingCoordinate[1], currentCoordinate[1]),
-                                    width: Math.abs(currentCoordinate[0] - startingCoordinate[0]),
-                                    height: Math.abs(currentCoordinate[1] - startingCoordinate[1])
-                                }}/>
-                            }
-                            {linkAreas.map((linkArea: LinkArea, index: number) => {
-                                return <Rnd
-                                    key={index}
-                                    className='bg-black bg-opacity-50 outline-white outline-1 relative'
-                                    position={{
-                                        x: linkArea.x,
-                                        y: linkArea.y
-                                    }}
-                                    size={{
-                                        width: linkArea.width,
-                                        height: linkArea.height
-                                    }}
-                                    bounds='parent'
-                                    onDragStop={(_, d) =>
-                                        updateLinkArea(
-                                            index,
-                                            {
-                                                ...linkArea,
-                                                x: Math.min(Math.max(d.x, 0), imageRef.current!.width - linkArea.width),
-                                                y: Math.min(Math.max(d.y, 0), imageRef.current!.height - linkArea.height),
-                                            }
-                                        )
-                                    }
-                                    onResizeStop={(_, __, ___, d, p) => {
-                                        updateLinkArea(
-                                            index,
-                                            {
-                                                ...linkArea,
-                                                width: linkArea.width + d.width,
-                                                height: linkArea.height + d.height,
-                                                x: p.x,
-                                                y: p.y,
-                                            }
-                                        )
-                                    }
+                        <div className='w-auto flex justify-center'>
+                            <div className='relative'>
+                                <img
+                                    alt={''}
+                                    onMouseDown={onMouseDown}
+                                    ref={imageRef}
+                                    src={imageUrl}
+                                    className='object-scale-down select-none'
+                                    draggable={false}
+                                />
+                                {
+                                    // Highlight area
+                                    creatingNewLinkArea &&
+                                    <div className='bg-black opacity-50 absolute' style={{
+                                        left: Math.min(startingCoordinate[0], currentCoordinate[0]),
+                                        top: Math.min(startingCoordinate[1], currentCoordinate[1]),
+                                        width: Math.abs(currentCoordinate[0] - startingCoordinate[0]),
+                                        height: Math.abs(currentCoordinate[1] - startingCoordinate[1])
+                                    }}/>
+                                }
+                                {linkAreas.map((linkArea: LinkArea, index: number) => {
+                                    return <Rnd
+                                        key={index}
+                                        className='bg-black bg-opacity-50 outline-white outline-1 relative'
+                                        position={{
+                                            x: linkArea.x,
+                                            y: linkArea.y
+                                        }}
+                                        size={{
+                                            width: linkArea.width,
+                                            height: linkArea.height
+                                        }}
+                                        bounds='parent'
+                                        onDragStop={(_, d) =>
+                                            updateLinkArea(
+                                                index,
+                                                {
+                                                    ...linkArea,
+                                                    x: Math.min(Math.max(d.x, 0), imageRef.current!.width - linkArea.width),
+                                                    y: Math.min(Math.max(d.y, 0), imageRef.current!.height - linkArea.height),
+                                                }
+                                            )
+                                        }
+                                        onResizeStop={(_, __, ___, d, p) => {
+                                            updateLinkArea(
+                                                index,
+                                                {
+                                                    ...linkArea,
+                                                    width: linkArea.width + d.width,
+                                                    height: linkArea.height + d.height,
+                                                    x: p.x,
+                                                    y: p.y,
+                                                }
+                                            )
+                                        }
 
-                                    }
-                                >
+                                        }
+                                    >
                                     <span className='italic text-sm ml-2 opacity-50'>
                                         {linkArea.name != '' ? linkArea.name : (index + 1)}
                                     </span>
-                                </Rnd>
-                            })
-                            }
+                                    </Rnd>
+                                })
+                                }
+                            </div>
                         </div>
                         <span>
                             3. Fill in the osu!user URLs and names below.
