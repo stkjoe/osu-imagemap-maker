@@ -205,8 +205,9 @@ function App() {
                     className='text-center'>
                     This is a tool used to easily generate BBCode image maps for osu! pages.
                     <br/>
-                    This is not an image uploader site. You will need to upload the image first to an image host like <a
-                    href='https://imgur.com/upload'>imgur</a>
+                    This is not an image uploader site. You will need to upload the image first to an image host.
+                    <br/>
+                    <b>Note: Imgur doesn't work for some reason so don't use that</b>
 
                 </a>
                 <label htmlFor={INPUT_IMAGE_URL_ID}>
