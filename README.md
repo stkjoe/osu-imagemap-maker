@@ -1,5 +1,7 @@
 # osu-imagemap-maker
 
+https://stkjoe.github.io/osu-imagemap-maker/
+
 This is a tool used to easily generate BBCode image maps for osu! pages.
 
 ## Getting Started for Development
