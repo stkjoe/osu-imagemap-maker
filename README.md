@@ -6,7 +6,7 @@ This is a tool used to easily generate BBCode image maps for osu! pages.
 
 ## Getting Started for Development
 
-The webapp is written in Typescript, Vite, and React. Ensure you have NodeJS installed.
+The webapp is written in Typescript, using Vite, and React. Ensure you have NodeJS installed.
 
 ### Installation
 
