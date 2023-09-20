@@ -11,6 +11,7 @@
     "dev-ext": "vite --host"
   },
   "dependencies": {
+    "@headlessui/react": "^1.7.17",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-rnd": "^10.4.1",
